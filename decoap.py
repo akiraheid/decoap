@@ -200,7 +200,12 @@ def generate_desktop_launcher(manifest, layers):
 
     others = []
     if icon_path:
-        dest = f'{_SHARE_DIR}/icons/{container_name}.png'
+        dest_dir = f'{_SHARE_DIR}/icons'
+        dest = f'{dest_dir}/{container_name}.png'
+
+        if not exists(dest_dir):
+            makedirs(dest_dir, mode=0o755, exist_ok=True)
+
         file_copy(icon_path, dest)
         others.append(f'Icon={container_name}')
 
