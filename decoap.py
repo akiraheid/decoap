@@ -1,6 +1,6 @@
 import argparse
 import json
-from os.path import exists
+from os.path import basename, exists
 from os import chmod, makedirs
 from pathlib import Path
 from random import randint
@@ -74,6 +74,9 @@ def find_in_latest_decoap_layer(layers, path):
             return found_path
 
     return None
+
+def get_container_name(manifest):
+    return basename(manifest['containerName'])
 
 def get_icon_path(layers):
     return find_in_latest_decoap_layer(layers, 'icons/icon.png')
@@ -153,7 +156,7 @@ def parse_ports(port_str):
     return f'-p {host}:{target}'
 
 def generate_launcher_bin(manifest):
-    args = [f'--name {manifest["containerName"]}']
+    args = [f'--name {manifest["appName"]}']
 
     if 'detach' in manifest and manifest['detach']:
         args.append('-d')
@@ -185,7 +188,7 @@ def generate_launcher_bin(manifest):
     if not exists(bin_dir):
         makedirs(bin_dir)
 
-    path = f'{bin_dir}/{manifest["containerName"]}'
+    path = f'{bin_dir}/{get_container_name(manifest)}'
     with open(path, 'w') as fp:
         fp.write(content)
 
@@ -196,7 +199,7 @@ def generate_launcher_bin(manifest):
 
 def generate_desktop_launcher(manifest, layers):
     icon_path = get_icon_path(layers)
-    container_name = manifest['containerName']
+    container_name = get_container_name(manifest)
 
     others = []
     if icon_path:
