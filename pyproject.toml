@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "decoap"
+version = "0.0.1"
+authors = [
+  { name="Akira Heid", email="author@example.com" },
+]
+description = "Manage the download and configuration of desktop container applications (decoaps)."
+readme = "README.md"
+requires-python = ">=3.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/akiraheid/decoap"
+"Bug Tracker" = "https://github.com/akiraheid/decoap/issues"
+
+[project.scripts]
+decoap = "decoap.decoap:_main"

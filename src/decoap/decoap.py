@@ -234,7 +234,7 @@ def generate_desktop_launcher(manifest, layers):
 
     print(f'Created desktop launcher {launcher_path}')
 
-if __name__ == '__main__':
+def _main():
     args = get_args()
     image = get_image(args.IMAGE)
     image_name = image["names"][0]
@@ -249,3 +249,6 @@ if __name__ == '__main__':
     generate_desktop_launcher(manifest, layers)
 
     # Sanitize manifest content of ';'
+
+if __name__ == '__main__':
+    _main()
