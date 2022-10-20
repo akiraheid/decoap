@@ -161,6 +161,10 @@ def generate_launcher_bin(manifest):
     if 'detach' in manifest and manifest['detach']:
         args.append('-d')
 
+    if 'devices' in manifest:
+        for device in manifest['devices']:
+            args.append(f'--device {device}')
+
     if 'env' in manifest:
         for env in manifest['env']:
             args.append(f'-e {env}')
@@ -211,6 +215,9 @@ def generate_desktop_launcher(manifest, layers):
 
         file_copy(icon_path, dest)
         others.append(f'Icon={container_name}')
+    else:
+        dest = f'{_SHARE_DIR}/icons/default.png'
+        others.append(f'Icon=default')
 
     if 'mimeTypes' in manifest:
         mime = 'MimeType=' + ';'.join(manifest['mimeTypes'])
