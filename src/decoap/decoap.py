@@ -40,16 +40,6 @@ def get_image(name):
                 if name in image_name:
                     return image
 
-def get_args():
-    image_help = 'The image name or ID.'
-    gen_help = ''
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('IMAGE', type=str, help=image_help)
-    parser.add_argument('-g', '--generate-config', type=bool, help=gen_help)
-
-    return parser.parse_args()
-
 def get_layers_from(layer_id):
     '''Return the layers that make up this layer. Layers are returned in
     descending order.'''
@@ -173,6 +163,11 @@ def generate_launcher_bin(manifest):
         for env in manifest['env']:
             args.append(f'-e {env}')
 
+    # How handle
+    # * Config files (rw)
+    # * Personal files (ro)
+    # * System files (rw and can't ro)
+
     if 'ports' in manifest:
         for port in manifest['ports']:
             port_range = parse_ports(port)
@@ -265,9 +260,8 @@ def generate_desktop_launcher(manifest, layers):
 
     print(f'Created desktop launcher {launcher_path}')
 
-def _main():
-    args = get_args()
-    image = get_image(args.IMAGE)
+def subcommand_install(args):
+    image = get_image(args.image)
     image_name = image["names"][0]
 
     layers = get_layers_from(image['layer'])
@@ -280,6 +274,23 @@ def _main():
     generate_desktop_launcher(manifest, layers)
 
     # Sanitize manifest content of ';'
+
+def setup_args():
+    image_help = 'The image name or ID.'
+    install_help = 'Install software.'
+
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(title='Available commands')
+
+    install = subparsers.add_parser('install', help=install_help)
+    install.add_argument('image', type=str, help=image_help)
+    install.set_defaults(func=subcommand_install)
+
+    return parser.parse_args()
+
+def _main():
+    args = setup_args()
+    args.func(args)
 
 if __name__ == '__main__':
     _main()
