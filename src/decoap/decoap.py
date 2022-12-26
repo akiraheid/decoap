@@ -12,6 +12,8 @@ from textwrap import dedent
 
 from pprint import pprint as pp
 
+import decoap.manifest as manifest
+
 _LOCAL_DIR = f'{str(Path.home())}/.local'
 _SHARE_DIR = f'{_LOCAL_DIR}/share'
 _CONTAINER_DIR = f'{_SHARE_DIR}/containers'
@@ -39,10 +41,12 @@ def get_image(name):
                     return image
 
 def get_args():
-    image_help='The image name or ID.'
+    image_help = 'The image name or ID.'
+    gen_help = ''
 
     parser = argparse.ArgumentParser()
     parser.add_argument('IMAGE', type=str, help=image_help)
+    parser.add_argument('-g', '--generate-config', type=bool, help=gen_help)
 
     return parser.parse_args()
 
@@ -85,7 +89,7 @@ def find_manifest(layers):
     return find_in_latest_decoap_layer(layers, 'manifest.json')
 
 def parse_manifest(manifest_path):
-    data = load_json(manifest_path)
+    data = manifest.load(manifest_path)
 
     if not 'appName' in data:
         raise Exception('Missing "appName" in manifest.')
@@ -178,12 +182,32 @@ def generate_launcher_bin(manifest):
         args.append('--rm')
         pass
 
+    createDirs = []
     if 'volumes' in manifest:
         for volume in manifest['volumes']:
+            parts = volume.split(':')
+            hostVol = parts[0]
+            containerVol = parts[1]
+
+            if not exists(hostVol):
+                print(f'Application wants to mount a path that doesn\'t exist.')
+                createPath = ''
+                while createPath.lower() not in ['y', 'n']:
+                    createPath = input(f'Create missing path {hostVol} [y/N]:')
+
+                    # Default answer is 'n'
+                    if createPath == '':
+                        createPath = 'n'
+
+                if createPath.lower() == 'y':
+                    createDirs.append(hostVol)
+
             args.append(f'-v {volume}')
 
     content = dedent(f'''\
             #!/bin/bash
+
+            mkdir -p {' '.join(createDirs)}
 
             podman run {' '.join(args)} {manifest["containerName"]}
             ''')
