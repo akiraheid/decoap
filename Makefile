@@ -1,9 +1,9 @@
-.PHONY: all check clean dist venv
+.PHONY: all test clean dist venv
 
-all: check clean dist install
+all: test clean dist install
 
-check:
-	echo Testing
+test:
+	PYTHONPATH=${PYTHONPATH}:${PWD}/src python3 -m unittest
 
 clean:
 	-rm -r dist venv src/*.egg-info

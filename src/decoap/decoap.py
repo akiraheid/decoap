@@ -10,40 +10,18 @@ import stat
 from sys import exit
 from textwrap import dedent
 
-from pprint import pprint as pp
-
 import decoap.manifest as manifest
+import decoap.oci as oci
+import decoap.host as host
 
 _LOCAL_DIR = f'{str(Path.home())}/.local'
 _SHARE_DIR = f'{_LOCAL_DIR}/share'
 _CONTAINER_DIR = f'{_SHARE_DIR}/containers'
 
-def load_json(path):
-    data = None
-    with open(path, 'r') as fp:
-        data = json.load(fp)
-
-    return data
-
-def get_image_list():
-    return load_json(f'{_CONTAINER_DIR}/storage/overlay-images/images.json')
-
-def get_layer_list():
-    return load_json(f'{_CONTAINER_DIR}/storage/overlay-layers/layers.json')
-
-def get_image(name):
-    image_list = get_image_list()
-
-    for image in image_list:
-        if 'names' in image:
-            for image_name in image['names']:
-                if name in image_name:
-                    return image
-
 def get_layers_from(layer_id):
     '''Return the layers that make up this layer. Layers are returned in
     descending order.'''
-    layer_list = get_layer_list()
+    layer_list = oci.get_layer_list()
     layers = []
 
     search_layer = layer_id
@@ -207,7 +185,7 @@ def generate_launcher_bin(manifest):
             podman run {' '.join(args)} {manifest["containerName"]}
             ''')
 
-    bin_dir = f'{_LOCAL_DIR}/bin'
+    bin_dir = host._bin_prefix
     if not exists(bin_dir):
         makedirs(bin_dir)
 
@@ -253,27 +231,31 @@ def generate_desktop_launcher(manifest, layers):
     others = '\n'.join(others)
     launcher_content += '\n' + others
 
-    launcher_path = f'{_SHARE_DIR}/applications/{container_name}.desktop'
+    launcher_path = f'{host._desktop_prefix}/{container_name}.desktop'
 
     with open(launcher_path, 'w') as fp:
         fp.write(launcher_content)
 
     print(f'Created desktop launcher {launcher_path}')
 
-def subcommand_install(args):
-    image = get_image(args.image)
-    image_name = image["names"][0]
+def install(image_name):
+    image = oci.Image(image_name)
+    if not image.exists():
+        print(f"Did not find '{image_name}' locally. Downloading...")
+        image.pull()
 
-    layers = get_layers_from(image['layer'])
-    print(f'Found matching image [{image_name}] composed of layers:')
-    print('\n'.join(layers))
+    print(f'Found matching image [{image.fullname}] composed of layers:')
+    print('\n'.join(image.layers))
 
-    manifest = get_manifest(layers)
+    manifest = get_manifest(image.layers)
 
     generate_launcher_bin(manifest)
-    generate_desktop_launcher(manifest, layers)
+    generate_desktop_launcher(manifest, image.layers)
 
     # Sanitize manifest content of ';'
+
+def subcommand_install(args):
+    install(args.image)
 
 def setup_args():
     image_help = 'The image name or ID.'
